@@ -1,24 +1,28 @@
 package com.anuj.telegrambot.utils;
 
 import com.anuj.telegrambot.contant.MySqlValues;
-import com.anuj.telegrambot.contant.Urls;
 import com.mysql.cj.jdbc.MysqlDataSource;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 public class MySQLConnectionUtils {
 
 
 
-    public void readDatabase() throws SQLException {
+    public static Connection getConnection(){
         MysqlDataSource dataSource = new MysqlDataSource();
         dataSource.setUser(MySqlValues.USERNAME);
         dataSource.setPassword(MySqlValues.PASSWORD);
         dataSource.setServerName(MySqlValues.SERVER_NAME);
         dataSource.setDatabaseName(MySqlValues.DB_NAME);
-
-        Connection connection = dataSource.getConnection();
-        System.out.println(connection);
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return connection;
 
     }
 

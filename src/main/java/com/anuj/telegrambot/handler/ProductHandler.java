@@ -1,68 +1,117 @@
 package com.anuj.telegrambot.handler;
 
-import com.anuj.telegrambot.contant.MySqlValues;
-import com.anuj.telegrambot.contant.ProductDetail;
+import com.anuj.telegrambot.bot.ShortageTrackerBot;
+import com.anuj.telegrambot.contant.RegexConstant;
 import com.anuj.telegrambot.contant.ScarcityValueDetail;
-import com.anuj.telegrambot.utils.MySQLConnectionUtils;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import com.anuj.telegrambot.exception.ProductNotFoundException;
+import com.anuj.telegrambot.exception.ReportNotFoundException;
+import com.anuj.telegrambot.exception.UserNotFoundException;
+import com.anuj.telegrambot.model.db.Product;
+import com.anuj.telegrambot.model.db.Report;
+import com.anuj.telegrambot.model.db.User;
+import com.anuj.telegrambot.repository.ReportRepository;
+import com.anuj.telegrambot.repository.UserRepository;
+import com.anuj.telegrambot.service.ProductService;
+import com.anuj.telegrambot.service.ReportService;
+import com.anuj.telegrambot.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+@Service
 public class ProductHandler {
 
-    public static SendMessage updateProduct(Update update) {
-        Connection connection = MySQLConnectionUtils.getConnection();
-        CallbackQuery callbackQuery = update.getCallbackQuery();
-        String productKey = callbackQuery.getData();
-        Long chatId = callbackQuery.getMessage().getChatId();
-        String productName = ProductDetail.productMap.get(productKey);
-        Integer userId = callbackQuery.getFrom().getId();
-        if (productName != null) {
-            try {
-                PreparedStatement preparedStatement = connection.prepareStatement(MySqlValues.UPDATE_PRODUCT_NAME_STATEMENT);
-                preparedStatement.setString(1, productName);
-                preparedStatement.setInt(2, userId);
-                if (preparedStatement.executeUpdate() > 0) {
-                    SendMessage sendMessage = new SendMessage()
-                            .setText("You have selected \"<b>"+ productName+"</b>\"\n" +
-                                    "Please Select the scarcity level\n" +
-                                    "" +
-                                    "5: High\n" +
-                                    "1: Normal\n")
-                            .setChatId(chatId);
-                    sendMessage.setReplyMarkup(designScarcityKeyboard());
-                    sendMessage.enableHtml(true);
-                    return sendMessage;
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        return new SendMessage().setText("Please Try Again Later");
+    private final UserService userService;
+    private final ReportRepository reportRepository;
+    private final UserRepository userRepository;
+    private final ProductService productService;
+    private final ShortageTrackerBot shortageTrackerBot;
+    private final GeneralHandler generalHandler;
+    private final ReportService reportService;
+
+    @Autowired
+    public ProductHandler(UserService userService,
+                          ReportRepository reportRepository,
+                          UserRepository userRepository,
+                          ProductService productService,
+                          @Lazy ShortageTrackerBot shortageTrackerBot,
+                          GeneralHandler generalHandler,
+                          ReportService reportService) {
+        this.userRepository = userRepository;
+        this.productService = productService;
+        this.userService = userService;
+        this.reportRepository = reportRepository;
+        this.shortageTrackerBot = shortageTrackerBot;
+        this.generalHandler = generalHandler;
+        this.reportService = reportService;
     }
 
-    private static InlineKeyboardMarkup designScarcityKeyboard(){
-        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
-        Iterator entries = ScarcityValueDetail.scarcityValueMap.entrySet().iterator();
-        List<InlineKeyboardButton> column = new ArrayList<>();
-        while (entries.hasNext()) {
-            Map.Entry pair = (Map.Entry) entries.next();
-            column.add(new InlineKeyboardButton().setText(pair.getValue().toString()).setCallbackData(pair.getKey().toString()));
+    public void setProduct(Update update) {
+        try {
+
+            String callbackText = update.getCallbackQuery().getData();
+            Integer telegramUserId = update.getCallbackQuery().getFrom().getId();
+            Pattern pattern = Pattern.compile(RegexConstant.PRODUCT_CATEGORY_FORMAT);
+            Matcher matcher = pattern.matcher(callbackText);
+            String idProduct = "";
+            String idReport = "";
+            boolean matched = false;
+            while (matcher.find()) {
+                matched = true;
+                idProduct = matcher.group(1);
+                idReport = matcher.group(2);
+            }
+            if (matched) {
+                try {
+                    Long verifiedIdProduct = Long.valueOf(idProduct);
+                    Long verifiedIdReport = Long.valueOf(idReport);
+                    User user = userService.getUserFromTelegramId(telegramUserId);
+                    Product product = productService.getProduct(verifiedIdProduct);
+                    Report report = reportService.getReport(verifiedIdReport, user);
+                    report.setProduct(product);
+                    report.setLocaleName(productService.getProductLocaleName(product, user));
+                    reportRepository.save(report);
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "You have selected: \n" +
+                            "\nProduct Name: " + report.getLocaleName()+"\n" +
+                            "\n===================================\n"+
+                            "Please Select the scarcity level\n" +
+                            "5: High\n" +
+                            "1: Normal"));
+                    shortageTrackerBot.execute(generalHandler.levelInlineKeyboardEdit(update,ScarcityValueDetail.scarcityValueMap,report.getIdReport()));
+
+
+                } catch (UserNotFoundException e) {
+                    shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "Receiver do not have address created\n" +
+                            "\"User not found \n" +
+                            "Please  send message  \"/start\""));
+
+                } catch (ProductNotFoundException e) {
+                    shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "Something went wrong. Please try again later"));
+                } catch (ReportNotFoundException e) {
+                    e.printStackTrace();
+                    shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "Receiver do not have address created\n" +
+                            "\"Report not found \n" +
+                            "Please  send message  \"/start\""));
+                }
+
+            } else {
+                shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
+                shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "Something went wrong. Please try again later"));
+
+            }
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
         }
-        rowsInline.add(column);
-        markupInline.setKeyboard(rowsInline);
-        return markupInline;
+
     }
+
 
 }

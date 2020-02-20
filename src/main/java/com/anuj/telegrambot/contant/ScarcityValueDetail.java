@@ -10,11 +10,11 @@ public class ScarcityValueDetail {
 
     static {
         scarcityValueMap = new LinkedHashMap<>();
-        scarcityValueMap.put("scarcity_one", 1);
-        scarcityValueMap.put("scarcity_two", 2);
-        scarcityValueMap.put("scarcity_three", 3);
-        scarcityValueMap.put("scarcity_four", 4);
-        scarcityValueMap.put("scarcity_five", 5);
+        scarcityValueMap.put("scarcity_1", 1);
+        scarcityValueMap.put("scarcity_2", 2);
+        scarcityValueMap.put("scarcity_3", 3);
+        scarcityValueMap.put("scarcity_4", 4);
+        scarcityValueMap.put("scarcity_5", 5);
     }
 
 }

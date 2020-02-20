@@ -10,11 +10,11 @@ public class PriceValueDetail {
 
     static {
         expensiveValueMap = new LinkedHashMap<>();
-        expensiveValueMap.put("expensive_one", 1);
-        expensiveValueMap.put("expensive_two", 2);
-        expensiveValueMap.put("expensive_three", 3);
-        expensiveValueMap.put("expensive_four", 4);
-        expensiveValueMap.put("expensive_five", 5);
+        expensiveValueMap.put("expensive_1", 1);
+        expensiveValueMap.put("expensive_2", 2);
+        expensiveValueMap.put("expensive_3", 3);
+        expensiveValueMap.put("expensive_4", 4);
+        expensiveValueMap.put("expensive_5", 5);
     }
 
 

@@ -10,6 +10,7 @@ import com.anuj.telegrambot.repository.ReportRepository;
 import com.anuj.telegrambot.repository.UserRepository;
 import com.anuj.telegrambot.service.ReportService;
 import com.anuj.telegrambot.service.UserService;
+import com.anuj.telegrambot.utils.LocaleUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -17,9 +18,11 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,16 +32,72 @@ public class NoteHandler {
     private final UserService userService;
     private final ReportRepository reportRepository;
     private final ReportService reportService;
+    private final LocaleUtils localeUtils;
+    private final ShortageTrackerBot shortageTrackerBot;
+    private final GeneralHandler generalHandler;
 
     @Autowired
     public NoteHandler(UserService userService,
                        ReportRepository reportRepository,
-                       ReportService reportService) {
+                       ReportService reportService,
+                       LocaleUtils localeUtils,
+                       @Lazy ShortageTrackerBot shortageTrackerBot,
+                       GeneralHandler generalHandler) {
         this.userService = userService;
         this.reportRepository = reportRepository;
         this.reportService = reportService;
+        this.localeUtils = localeUtils;
+        this.shortageTrackerBot = shortageTrackerBot;
+        this.generalHandler = generalHandler;
 
     }
+
+    public void noteSkip(Update update) {
+        try {
+            String callbackText = update.getCallbackQuery().getData();
+            Integer telegramUserId = update.getCallbackQuery().getFrom().getId();
+            Pattern pattern = Pattern.compile(RegexConstant.SKIP_NOTE);
+            Matcher matcher = pattern.matcher(callbackText);
+            String idReport = "";
+            boolean matched = false;
+            while (matcher.find()) {
+                matched = true;
+                idReport = matcher.group(1);
+            }
+            if (matched) {
+                try {
+                    Long verifiedReportId = Long.valueOf(idReport);
+                    User user = userService.getUserFromTelegramId(telegramUserId);
+                    Report report = reportService.getReport(verifiedReportId, user);
+                    report.setProductNote("");
+                    report = reportRepository.save(report);
+                    ResourceBundle resourceBundle = localeUtils.getMessageResource(user.getLanguageType());
+                    String messageText = saveReportAndReturnMessage(user, report);
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update,messageText));
+                    shortageTrackerBot.execute(generalHandler.addSendOrCancel(resourceBundle,update,report.getIdReport()));
+
+                }catch (UserNotFoundException e){
+                    shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "Receiver do not have address created\n" +
+                            "\"User not found \n" +
+                            "Please  send message  \"/start\""));
+                }catch (ReportNotFoundException e){
+                    shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "Receiver do not have address created\n" +
+                            "\"Report not found \n" +
+                            "Please  send message  \"/start\""));
+                }
+            } else {
+                shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
+                shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "Something went wrong. Please try again later"));
+
+            }
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+
+    }
+
 
     public SendMessage setNote(Update update) {
         Long chatId = update.getMessage().getChatId();
@@ -59,27 +118,18 @@ public class NoteHandler {
                     Long verifiedReportId = Long.valueOf(idReport);
                     User user = userService.getUserFromTelegramId(telegramUserId);
                     Report report = reportService.getReport(verifiedReportId, user);
+                    ResourceBundle resourceBundle = localeUtils.getMessageResource(user.getLanguageType());
                     report.setProductNote(noteString);
                     report = reportRepository.save(report);
-                    String messageText =  "<b>Your Report:</b> \n" +
-                            "\n===================================\n"+
-                            "\nReport Id: <b>" + report.getIdReport() +"</b>"+
-                            "\nLatitude: <b>"+report.getLatitude()+"</b>"+
-                            "\nLongitude: <b>"+report.getLongitude()+"</b>"+
-                            "\nProduct Name: <b>" + report.getLocaleName() +"</b>"+
-                            "\nProduct Scarcity Level: <b>" + report.getProductScarcity() +"</b>"+
-                            "\nProduct Expensive Level: <b>" + report.getProductPrice() +"</b>"+
-                            "\nProduct Note:<b><i>" + report.getProductNote() + "</i>" +"</b>"+
-                            "\n\n===================================\n" +
-                            "Do you want to submit this record?";
+                    String messageText = saveReportAndReturnMessage(user, report);
                     SendMessage sendMessage = new SendMessage()
                             .setChatId(chatId)
                             .setText(messageText);
                     InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
                     List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
                     List<InlineKeyboardButton> rowInline = new ArrayList<>();
-                    rowInline.add(new InlineKeyboardButton().setText("Yes").setCallbackData("send_report_true_"+report.getIdReport()));
-                    rowInline.add(new InlineKeyboardButton().setText("No").setCallbackData("send_report_false_"+report.getIdReport()));
+                    rowInline.add(new InlineKeyboardButton().setText(resourceBundle.getString("send.yes")).setCallbackData("send_report_true_" + report.getIdReport()));
+                    rowInline.add(new InlineKeyboardButton().setText(resourceBundle.getString("send.no")).setCallbackData("send_report_false_" + report.getIdReport()));
                     rowsInline.add(rowInline);
                     markupInline.setKeyboard(rowsInline);
                     sendMessage.setReplyMarkup(markupInline);
@@ -107,6 +157,23 @@ public class NoteHandler {
         return new SendMessage()
                 .setChatId(chatId)
                 .setText("Something went wrong. Please try again later");
+    }
+
+    public String saveReportAndReturnMessage(User user, Report report) {
+
+        ResourceBundle resourceBundle = localeUtils.getMessageResource(user.getLanguageType());
+        return "<b>" + resourceBundle.getString("report.your-report") + "</b> \n" +
+                "\n===================================\n" +
+                "\n" + resourceBundle.getString("report.report-id") + " <b>" + report.getIdReport() + "</b>" +
+                "\n" + resourceBundle.getString("report.latitude") + " <b>" + report.getLatitude() + "</b>" +
+                "\n" + resourceBundle.getString("report.longitude") + " <b>" + report.getLongitude() + "</b>" +
+                "\n" + resourceBundle.getString("report.product.name") + " <b>" + report.getLocaleName() + "</b>" +
+                "\n" + resourceBundle.getString("report.product.scarcity.level") + " <b>" + report.getProductScarcity() + "</b>" +
+                "\n" + resourceBundle.getString("report.product.expensive.level") + " <b>" + report.getProductPrice() + "</b>" +
+                "\n" + resourceBundle.getString("report.product.note") + " <b><i>" + report.getProductNote() + "</i>" + "</b>" +
+                "\n\n===================================\n" +
+                resourceBundle.getString("enter.submit.decision");
+
     }
 
 }

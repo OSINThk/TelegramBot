@@ -12,4 +12,8 @@ public class RegexConstant {
 
     public static final String SEND_REPORT_ACCEPT = "send_report_true_(\\d+)";
     public static final String SEND_REPORT_REJECT = "send_report_false_(\\d+)";
+
+    public static final String LANGUAGE_CHOOSE_OPTION = "language_option_(\\d+)";
+
+    public static final String SKIP_NOTE = "skip_note_(\\d+)";
 }

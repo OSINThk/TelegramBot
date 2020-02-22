@@ -1,20 +1,14 @@
 package com.anuj.telegrambot.config;
 
-import org.apache.tomcat.util.descriptor.LocalResolver;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.i18n.SessionLocaleResolver;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.util.Locale;
-
-@Configuration
+@ConfigurationProperties(prefix = "start")
+@Getter
+@Setter
 public class LocaleResolverConfig {
 
-    @Bean
-    public SessionLocaleResolver localResolver(){
-        SessionLocaleResolver slr = new SessionLocaleResolver();
-        slr.setDefaultLocale(Locale.US);
-        return slr;
-    }
+    private  String askLocation;
 
 }

@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:scarcitydata}?useSSL=false&createDatabaseIfNotExist=true
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:scarcitydata}?useSSL=false&createDatabaseIfNotExist=true&useUnicode=yes&characterSetServer=character_set_server=utf8mb4&collationServer=utf8mb4_unicode_ci
     username: root
     password: root
     driver-class-name: com.mysql.jdbc.Driver

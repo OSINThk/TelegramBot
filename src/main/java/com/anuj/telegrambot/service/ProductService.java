@@ -1,5 +1,6 @@
 package com.anuj.telegrambot.service;
 
+import com.anuj.telegrambot.contant.LanguageType;
 import com.anuj.telegrambot.contant.Urls;
 import com.anuj.telegrambot.exception.ProductNotFoundException;
 import com.anuj.telegrambot.model.db.Product;
@@ -55,11 +56,29 @@ public class ProductService {
         }
     }
 
-    public LinkedHashMap<String, String> getProductListFromDatabase(){
+    public LinkedHashMap<String, String> getProductListFromDatabase(LanguageType languageType){
         List<Product> productList = productRepository.findAll();
         LinkedHashMap<String,String> linkedHashMap = new LinkedHashMap<>();
         for(Product product: productList){
-            linkedHashMap.put("prod_"+product.getIdProduct(),product.getEnglish());
+            switch (languageType){
+                case zh_CN:{
+                    linkedHashMap.put("prod_"+product.getIdProduct(),product.getSimplified());
+                    break;
+                }
+                case zh_HK:{
+                    linkedHashMap.put("prod_"+product.getIdProduct(),product.getTraditional());
+                    break;
+                }
+                case zh_TW:{
+                    linkedHashMap.put("prod_"+product.getIdProduct(),product.getTraditionalTaiwan());
+                    break;
+                }
+                default:{
+                    linkedHashMap.put("prod_"+product.getIdProduct(),product.getEnglish());
+                    break;
+                }
+
+            }
         }
 
         return linkedHashMap;
@@ -72,16 +91,16 @@ public class ProductService {
 
     public String getProductLocaleName(Product product, User user){
         switch (user.getLanguageType()){
-            case English:{
+            case en:{
                 return product.getEnglish();
             }
-            case 简体:{
+            case zh_CN:{
                 return product.getSimplified();
             }
-            case 繁体:{
+            case zh_HK:{
                 return product.getTraditional();
             }
-            case 繁体_台灣:{
+            case zh_TW:{
                 return product.getTraditionalTaiwan();
             }
             default:{

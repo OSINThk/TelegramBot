@@ -2,9 +2,9 @@ package com.anuj.telegrambot.contant;
 
 public enum  LanguageType {
 
-    English,
-    简体,
-    繁体,
-    繁体_台灣
+    en,
+    zh_CN,
+    zh_HK,
+    zh_TW
 
 }

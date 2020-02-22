@@ -1,8 +1,6 @@
 package com.anuj.telegrambot.handler;
 
 import com.anuj.telegrambot.bot.ShortageTrackerBot;
-import com.anuj.telegrambot.contant.MySqlValues;
-import com.anuj.telegrambot.contant.PriceValueDetail;
 import com.anuj.telegrambot.contant.RegexConstant;
 import com.anuj.telegrambot.exception.ReportNotFoundException;
 import com.anuj.telegrambot.exception.UserNotFoundException;
@@ -12,23 +10,14 @@ import com.anuj.telegrambot.repository.ReportRepository;
 import com.anuj.telegrambot.repository.UserRepository;
 import com.anuj.telegrambot.service.ReportService;
 import com.anuj.telegrambot.service.UserService;
-import com.anuj.telegrambot.utils.MySQLConnectionUtils;
+import com.anuj.telegrambot.utils.LocaleUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,6 +31,7 @@ public class PriceHandler {
     private final GeneralHandler generalHandler;
     private final ShortageTrackerBot shortageTrackerBot;
     private final ReportService reportService;
+    private final LocaleUtils localeUtils;
 
     @Autowired
     public PriceHandler(UserService userService,
@@ -49,13 +39,15 @@ public class PriceHandler {
                         UserRepository userRepository,
                         GeneralHandler generalHandler,
                         @Lazy ShortageTrackerBot shortageTrackerBot,
-                        ReportService reportService) {
+                        ReportService reportService,
+                        LocaleUtils localeUtils) {
         this.userService = userService;
         this.reportRepository = reportRepository;
         this.userRepository = userRepository;
         this.generalHandler = generalHandler;
         this.shortageTrackerBot = shortageTrackerBot;
         this.reportService = reportService;
+        this.localeUtils = localeUtils;
     }
 
     public void setExpensiveness(Update update) {
@@ -80,22 +72,22 @@ public class PriceHandler {
                     Report report = reportService.getReport(verifiedReportId, user);
                     report.setProductPrice(expensiveLevel);
                     report = reportRepository.save(report);
-                    shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
-                    String messageText =  "<b>Your Report:</b> \n" +
-                            "\n===================================\n"+
-                            "\nReport Id: <b>" + report.getIdReport() +"</b>"+
-                            "\nLatitude: <b>"+report.getLatitude()+"</b>"+
-                            "\nLongitude: <b>"+report.getLongitude()+"</b>"+
-                            "\nProduct Name: <b>" + report.getLocaleName() +"</b>"+
-                            "\nProduct Scarcity Level: <b>" + report.getProductScarcity() +"</b>"+
-                            "\nProduct Expensive Level: <b>" + report.getProductPrice() +"</b>"+
+                    ResourceBundle resourceBundle = localeUtils.getMessageResource(user.getLanguageType());
+                    String messageText = "<b>" + resourceBundle.getString("report.your-report") + "</b> \n" +
+                            "\n===================================\n" +
+                            "\n" + resourceBundle.getString("report.report-id") + " <b>" + report.getIdReport() + "</b>" +
+                            "\n" + resourceBundle.getString("report.latitude") + " <b>" + report.getLatitude() + "</b>" +
+                            "\n" + resourceBundle.getString("report.longitude") + " <b>" + report.getLongitude() + "</b>" +
+                            "\n" + resourceBundle.getString("report.product.name") + " <b>" + report.getLocaleName() + "</b>" +
+                            "\n" + resourceBundle.getString("report.product.scarcity.level") + " <b>" + report.getProductScarcity() + "</b>" +
+                            "\n" + resourceBundle.getString("report.product.expensive.level") + " <b>" + report.getProductPrice() + "</b>" +
                             "\n\n===================================\n" +
-                            "\nPlease enter note by starting with /note report_id  For. eg.\n\"<b>/note "+report.getIdReport()+"  This is sample note </b>\" ";
+                            "\n" + resourceBundle.getString("enter.product.note") + " /note report_id " + resourceBundle.getString("for.example") + "<b>/note " + report.getIdReport() + " " + resourceBundle.getString("note.sample") + " </b>";
                     shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, messageText));
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEditAddSkip(resourceBundle, update, report.getIdReport()));
                 } catch (UserNotFoundException e) {
                     shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
-                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "Receiver do not have address created\n" +
-                            "\"User not found \n" +
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "User not found \n" +
                             "Please  send message  \"/start\""));
                 } catch (ReportNotFoundException e) {
                     e.printStackTrace();

@@ -14,12 +14,14 @@ import com.anuj.telegrambot.repository.UserRepository;
 import com.anuj.telegrambot.service.ProductService;
 import com.anuj.telegrambot.service.ReportService;
 import com.anuj.telegrambot.service.UserService;
+import com.anuj.telegrambot.utils.LocaleUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,6 +35,7 @@ public class ProductHandler {
     private final ShortageTrackerBot shortageTrackerBot;
     private final GeneralHandler generalHandler;
     private final ReportService reportService;
+    private final LocaleUtils localeUtils;
 
     @Autowired
     public ProductHandler(UserService userService,
@@ -41,7 +44,8 @@ public class ProductHandler {
                           ProductService productService,
                           @Lazy ShortageTrackerBot shortageTrackerBot,
                           GeneralHandler generalHandler,
-                          ReportService reportService) {
+                          ReportService reportService,
+                          LocaleUtils localeUtils) {
         this.userRepository = userRepository;
         this.productService = productService;
         this.userService = userService;
@@ -49,6 +53,7 @@ public class ProductHandler {
         this.shortageTrackerBot = shortageTrackerBot;
         this.generalHandler = generalHandler;
         this.reportService = reportService;
+        this.localeUtils = localeUtils;
     }
 
     public void setProduct(Update update) {
@@ -76,12 +81,18 @@ public class ProductHandler {
                     report.setProduct(product);
                     report.setLocaleName(productService.getProductLocaleName(product, user));
                     reportRepository.save(report);
-                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "You have selected: \n" +
-                            "\nProduct Name: " + report.getLocaleName()+"\n" +
-                            "\n===================================\n"+
-                            "Please Select the scarcity level\n" +
-                            "5: High\n" +
-                            "1: Normal"));
+                    ResourceBundle resourceBundle = localeUtils.getMessageResource(user.getLanguageType());
+                    String messageText = "<b>"+resourceBundle.getString("report.your-report")+"</b> \n" +
+                            "\n===================================\n" +
+                            "\n"+resourceBundle.getString("report.report-id")+" <b>" + report.getIdReport() + "</b>" +
+                            "\n"+resourceBundle.getString("report.latitude")+" <b>" + report.getLatitude() + "</b>" +
+                            "\n"+resourceBundle.getString("report.longitude")+" <b>" + report.getLongitude() + "</b>" +
+                            "\n"+resourceBundle.getString("report.product.name")+" <b>" + report.getLocaleName() + "</b>" +
+                            "\n\n===================================\n" +
+                            "\n"+resourceBundle.getString("enter.scarcity.level")+"\n" +
+                            resourceBundle.getString("level.high")+"\n" +
+                            resourceBundle.getString("level.normal");
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, messageText));
                     shortageTrackerBot.execute(generalHandler.levelInlineKeyboardEdit(update,ScarcityValueDetail.scarcityValueMap,report.getIdReport()));
 
 

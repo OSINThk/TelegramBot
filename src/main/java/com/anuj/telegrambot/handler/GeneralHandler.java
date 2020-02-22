@@ -30,7 +30,39 @@ public class GeneralHandler {
         return editMessageText;
     }
 
-    public EditMessageReplyMarkup levelInlineKeyboardEdit(Update update, HashMap<String,Integer> hashMap, Long idReport){
+    public EditMessageReplyMarkup addSendOrCancel(ResourceBundle resourceBundle, Update update, Long idReport) {
+        EditMessageReplyMarkup editMessageReplyMarkup = new EditMessageReplyMarkup();
+        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+        List<InlineKeyboardButton> column = new ArrayList<>();
+        column.add(new InlineKeyboardButton().setText(resourceBundle.getString("send.yes")).setCallbackData("send_report_true_" + idReport));
+        column.add(new InlineKeyboardButton().setText(resourceBundle.getString("send.no")).setCallbackData("send_report_false_" + idReport));
+        rowsInline.add(column);
+        markupInline.setKeyboard(rowsInline);
+        editMessageReplyMarkup.setReplyMarkup(markupInline);
+        editMessageReplyMarkup.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+        editMessageReplyMarkup.setChatId(update.getCallbackQuery().getMessage().getChatId());
+        return editMessageReplyMarkup;
+
+    }
+
+    public EditMessageReplyMarkup decisionMessageEditAddSkip(ResourceBundle resourceBundle, Update update, Long idReport) {
+        EditMessageReplyMarkup editMessageReplyMarkup = new EditMessageReplyMarkup();
+        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+        List<InlineKeyboardButton> column = new ArrayList<>();
+        column.add(new InlineKeyboardButton().setText(resourceBundle.getString("note.skip")).setCallbackData("skip_note_" + idReport));
+        rowsInline.add(column);
+        markupInline.setKeyboard(rowsInline);
+        editMessageReplyMarkup.setReplyMarkup(markupInline);
+        editMessageReplyMarkup.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+        editMessageReplyMarkup.setChatId(update.getCallbackQuery().getMessage().getChatId());
+        return editMessageReplyMarkup;
+
+    }
+
+
+    public EditMessageReplyMarkup levelInlineKeyboardEdit(Update update, HashMap<String, Integer> hashMap, Long idReport) {
         EditMessageReplyMarkup editMessageReplyMarkup = new EditMessageReplyMarkup();
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();

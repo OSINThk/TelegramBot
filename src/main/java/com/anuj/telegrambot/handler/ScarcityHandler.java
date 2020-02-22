@@ -2,9 +2,7 @@ package com.anuj.telegrambot.handler;
 
 import com.anuj.telegrambot.bot.ShortageTrackerBot;
 import com.anuj.telegrambot.contant.PriceValueDetail;
-import com.anuj.telegrambot.contant.MySqlValues;
 import com.anuj.telegrambot.contant.RegexConstant;
-import com.anuj.telegrambot.contant.ScarcityValueDetail;
 import com.anuj.telegrambot.exception.ReportNotFoundException;
 import com.anuj.telegrambot.exception.UserNotFoundException;
 import com.anuj.telegrambot.model.db.Report;
@@ -12,24 +10,14 @@ import com.anuj.telegrambot.model.db.User;
 import com.anuj.telegrambot.repository.ReportRepository;
 import com.anuj.telegrambot.service.ReportService;
 import com.anuj.telegrambot.service.UserService;
-import com.anuj.telegrambot.utils.MySQLConnectionUtils;
+import com.anuj.telegrambot.utils.LocaleUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,18 +29,21 @@ public class ScarcityHandler {
     private final ShortageTrackerBot shortageTrackerBot;
     private final GeneralHandler generalHandler;
     private final ReportRepository reportRepository;
+    private final LocaleUtils localeUtils;
 
     @Autowired
     public ScarcityHandler(UserService userService,
                            ReportService reportService,
                            @Lazy ShortageTrackerBot shortageTrackerBot,
                            GeneralHandler generalHandler,
-                           ReportRepository reportRepository) {
+                           ReportRepository reportRepository,
+                           LocaleUtils localeUtils) {
         this.userService = userService;
         this.reportService = reportService;
         this.shortageTrackerBot = shortageTrackerBot;
         this.generalHandler = generalHandler;
         this.reportRepository = reportRepository;
+        this.localeUtils = localeUtils;
     }
 
     public void setScarcity(Update update) {
@@ -77,19 +68,20 @@ public class ScarcityHandler {
                     Report report = reportService.getReport(verifiedReportId, user);
                     report.setProductScarcity(verifiedScarcityLevel);
                     report = reportRepository.save(report);
-                    String messageText =  "<b>Your Report:</b> \n" +
-                            "\n===================================\n"+
-                            "\nReport Id: <b>" + report.getIdReport() +"</b>"+
-                            "\nLatitude: <b>"+report.getLatitude()+"</b>"+
-                            "\nLongitude: <b>"+report.getLongitude()+"</b>"+
-                            "\nProduct Name: <b>" + report.getLocaleName() +"</b>"+
-                            "\nProduct Scarcity Level: <b>" + report.getProductScarcity() +"</b>"+
+                    ResourceBundle resourceBundle = localeUtils.getMessageResource(user.getLanguageType());
+                            String messageText = "<b>"+resourceBundle.getString("report.your-report")+"</b> \n" +
+                            "\n===================================\n" +
+                            "\n"+resourceBundle.getString("report.report-id")+" <b>" + report.getIdReport() + "</b>" +
+                            "\n"+resourceBundle.getString("report.latitude")+" <b>" + report.getLatitude() + "</b>" +
+                            "\n"+resourceBundle.getString("report.longitude")+" <b>" + report.getLongitude() + "</b>" +
+                            "\n"+resourceBundle.getString("report.product.name")+" <b>" + report.getLocaleName() + "</b>" +
+                            "\n"+resourceBundle.getString("report.product.scarcity.level")+" <b>" + report.getProductScarcity() + "</b>" +
                             "\n\n===================================\n" +
-                            "\nPlease Select the expensive level\n" +
-                            "5: High\n" +
-                            "1: Normal";
+                            "\n"+resourceBundle.getString("enter.expensive.level")+"\n" +
+                            resourceBundle.getString("level.high")+"\n" +
+                            resourceBundle.getString("level.normal");
 
-                            shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, messageText));
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, messageText));
                     shortageTrackerBot.execute(generalHandler.levelInlineKeyboardEdit(update, PriceValueDetail.expensiveValueMap, report.getIdReport()));
 
                 } catch (UserNotFoundException e) {

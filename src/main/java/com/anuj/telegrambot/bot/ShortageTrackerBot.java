@@ -19,6 +19,7 @@ public class ShortageTrackerBot extends TelegramLongPollingBot {
     private final PriceHandler priceHandler;
     private final NoteHandler noteHandler;
     private final SendReportHandler sendReportHandler;
+    private final LanguageHandler languageHandler;
 
     @Autowired
     public ShortageTrackerBot(StartHandler startHandler,
@@ -27,7 +28,8 @@ public class ShortageTrackerBot extends TelegramLongPollingBot {
                               ScarcityHandler scarcityHandler,
                               PriceHandler priceHandler,
                               NoteHandler noteHandler,
-                              SendReportHandler sendReportHandler){
+                              SendReportHandler sendReportHandler,
+                              LanguageHandler languageHandler){
         this.startHandler = startHandler;
         this.locationHandler = locationHandler;
         this.productHandler = productHandler;
@@ -35,6 +37,7 @@ public class ShortageTrackerBot extends TelegramLongPollingBot {
         this.priceHandler = priceHandler;
         this.noteHandler = noteHandler;
         this.sendReportHandler = sendReportHandler;
+        this.languageHandler= languageHandler;
     }
 
     public void onUpdateReceived(Update update) {
@@ -54,6 +57,10 @@ public class ShortageTrackerBot extends TelegramLongPollingBot {
                     }else{
                         sendReportHandler.sendReportCancel(update);
                     }
+                }else if(update.getCallbackQuery().getData().startsWith("language_option_")){
+                    languageHandler.chooseLanguage(update);
+                }else if(update.getCallbackQuery().getData().startsWith("skip_note_")){
+                    noteHandler.noteSkip(update);
                 }
             }
             if(update.hasMessage()&& update.getMessage().getLocation()!=null){
@@ -61,9 +68,11 @@ public class ShortageTrackerBot extends TelegramLongPollingBot {
             }
             if(update.hasMessage() && update.getMessage().hasText()){
                 if(update.getMessage().getText().equals(BotCommands.START_COMMAND)){
-                    execute(startHandler.startInformationCollection(update));
+                    execute(startHandler.startChat(update));
                 }else if(update.getMessage().getText().startsWith("/note")){
                     execute(noteHandler.setNote(update));
+                }else if(update.getMessage().getText().startsWith("Language")){
+                    execute(languageHandler.getLanguageList(update));
                 }
             }
 

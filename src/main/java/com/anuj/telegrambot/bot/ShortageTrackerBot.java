@@ -49,8 +49,6 @@ public class ShortageTrackerBot extends TelegramLongPollingBot {
                     scarcityHandler.setScarcity(update);
                 }else if (update.getCallbackQuery().getData().startsWith("expensive")){
                     priceHandler.setExpensiveness(update);
-                }else if(update.getCallbackQuery().getData().startsWith("submit")){
-                    execute(SubmissionHandler.checkSubmissionDecision(update));
                 }else if(update.getCallbackQuery().getData().startsWith("send_report")){
                     if(update.getCallbackQuery().getData().startsWith("send_report_true")){
                         sendReportHandler.sendReportConfirm(update);

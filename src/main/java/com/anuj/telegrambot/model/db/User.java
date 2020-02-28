@@ -25,9 +25,6 @@ public class User {
     @Column(name = "telegram_user_id")
     private Integer telegramUserId;
 
-    @Column(name = "telegram_user_name")
-    private String telegramUserName;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "language_type")
     private LanguageType languageType;
@@ -38,7 +35,6 @@ public class User {
     public static User getUserDto(UserDto userDto){
         User user = new User();
         user.setTelegramUserId(userDto.getTelegramUserId());
-        user.setTelegramUserName(userDto.getTelegramUserName());
         user.setLanguageType(userDto.getLanguageType());
         return user;
     }

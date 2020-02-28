@@ -14,6 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -43,15 +44,15 @@ public class StartHandler {
         }else{
             UserDto userDto = new UserDto();
             userDto.setTelegramUserId(telegramUserId);
-            userDto.setTelegramUserName(update.getMessage().getFrom().getUserName());
             userDto.setLanguageType(LanguageType.en);
             user = User.getUserDto(userDto);
+            user = userRepository.save(user);
 
         }
         ResourceBundle resourceBundle = localeUtils.getMessageResource(LanguageType.en);
         SendMessage message = new SendMessage()
                 .setChatId(chatId)
-                .setText(resourceBundle.getString("start.welcome")+ "@"+user.getTelegramUserName());
+                .setText(new String(resourceBundle.getString("start.welcome").getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8));
         message.setReplyMarkup(getBasicReplyKeyboardMarkup());
         message.setReplyToMessageId(update.getMessage().getMessageId());
         return message;

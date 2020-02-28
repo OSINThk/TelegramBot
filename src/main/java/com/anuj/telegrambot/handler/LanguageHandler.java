@@ -17,6 +17,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -62,6 +64,7 @@ public class LanguageHandler {
         markupInline.setKeyboard(rowsInline);
         sendMessage.setReplyMarkup(markupInline);
         sendMessage.enableHtml(true);
+        sendMessage.enableWebPagePreview();
         return sendMessage;
     }
 
@@ -94,10 +97,11 @@ public class LanguageHandler {
                     user.setLanguageType(languageType);
                     user = userRepository.save(user);
                     shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
-                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update,resourceBundle.getString("language.change-success")));
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update,new String(resourceBundle.getString("language.change-success").getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8)));
                 }catch (UserNotFoundException e){
                     shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
-                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, resourceBundle.getString("user.not-found")));
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update,new String(resourceBundle.getString("user.not-found").getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8)));
+
                 }
             }else {
                 shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));

@@ -20,6 +20,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -72,19 +73,21 @@ public class NoteHandler {
                     report.setProductNote("");
                     report = reportRepository.save(report);
                     ResourceBundle resourceBundle = localeUtils.getMessageResource(user.getLanguageType());
+                    if (report.getIsSubmitted()) {
+                        shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
+                        shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, new String(resourceBundle.getString("report.already-submitted").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8)));
+                    }
                     String messageText = saveReportAndReturnMessage(user, report);
-                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update,messageText));
-                    shortageTrackerBot.execute(generalHandler.addSendOrCancel(resourceBundle,update,report.getIdReport()));
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, messageText));
+                    shortageTrackerBot.execute(generalHandler.addSendOrCancel(resourceBundle, update, report.getIdReport()));
 
-                }catch (UserNotFoundException e){
+                } catch (UserNotFoundException e) {
                     shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
-                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "Receiver do not have address created\n" +
-                            "\"User not found \n" +
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "User not found \n" +
                             "Please  send message  \"/start\""));
-                }catch (ReportNotFoundException e){
+                } catch (ReportNotFoundException e) {
                     shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
-                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "Receiver do not have address created\n" +
-                            "\"Report not found \n" +
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, "Report not found \n" +
                             "Please  send message  \"/start\""));
                 }
             } else {
@@ -119,6 +122,12 @@ public class NoteHandler {
                     User user = userService.getUserFromTelegramId(telegramUserId);
                     Report report = reportService.getReport(verifiedReportId, user);
                     ResourceBundle resourceBundle = localeUtils.getMessageResource(user.getLanguageType());
+
+                    if (report.getIsSubmitted()) {
+                        return new SendMessage()
+                                .setChatId(chatId)
+                                .setText(new String(resourceBundle.getString("report.already-submitted").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8));
+                    }
                     report.setProductNote(noteString);
                     report = reportRepository.save(report);
                     String messageText = saveReportAndReturnMessage(user, report);
@@ -128,8 +137,8 @@ public class NoteHandler {
                     InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
                     List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
                     List<InlineKeyboardButton> rowInline = new ArrayList<>();
-                    rowInline.add(new InlineKeyboardButton().setText(resourceBundle.getString("send.yes")).setCallbackData("send_report_true_" + report.getIdReport()));
-                    rowInline.add(new InlineKeyboardButton().setText(resourceBundle.getString("send.no")).setCallbackData("send_report_false_" + report.getIdReport()));
+                    rowInline.add(new InlineKeyboardButton().setText(new String(resourceBundle.getString("send.yes").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8)).setCallbackData("send_report_true_" + report.getIdReport()));
+                    rowInline.add(new InlineKeyboardButton().setText(new String(resourceBundle.getString("send.no").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8)).setCallbackData("send_report_false_" + report.getIdReport()));
                     rowsInline.add(rowInline);
                     markupInline.setKeyboard(rowsInline);
                     sendMessage.setReplyMarkup(markupInline);
@@ -162,17 +171,17 @@ public class NoteHandler {
     public String saveReportAndReturnMessage(User user, Report report) {
 
         ResourceBundle resourceBundle = localeUtils.getMessageResource(user.getLanguageType());
-        return "<b>" + resourceBundle.getString("report.your-report") + "</b> \n" +
+        return "<b>" + new String(resourceBundle.getString("report.your-report").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + "</b> \n" +
                 "\n===================================\n" +
-                "\n" + resourceBundle.getString("report.report-id") + " <b>" + report.getIdReport() + "</b>" +
-                "\n" + resourceBundle.getString("report.latitude") + " <b>" + report.getLatitude() + "</b>" +
-                "\n" + resourceBundle.getString("report.longitude") + " <b>" + report.getLongitude() + "</b>" +
-                "\n" + resourceBundle.getString("report.product.name") + " <b>" + report.getLocaleName() + "</b>" +
-                "\n" + resourceBundle.getString("report.product.scarcity.level") + " <b>" + report.getProductScarcity() + "</b>" +
-                "\n" + resourceBundle.getString("report.product.expensive.level") + " <b>" + report.getProductPrice() + "</b>" +
-                "\n" + resourceBundle.getString("report.product.note") + " <b><i>" + report.getProductNote() + "</i>" + "</b>" +
+                "\n" + new String(resourceBundle.getString("report.report-id").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getIdReport() + "</b>" +
+                "\n" + new String(resourceBundle.getString("report.latitude").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getLatitude() + "</b>" +
+                "\n" + new String(resourceBundle.getString("report.longitude").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getLongitude() + "</b>" +
+                "\n" + new String(resourceBundle.getString("report.product.name").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getLocaleName() + "</b>" +
+                "\n" + new String(resourceBundle.getString("report.product.scarcity.level").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getProductScarcity() + "</b>" +
+                "\n" + new String(resourceBundle.getString("report.product.expensive.level").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getProductPrice() + "</b>" +
+                "\n" + new String(resourceBundle.getString("report.product.note").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b><i>" + report.getProductNote() + "</i>" + "</b>" +
                 "\n\n===================================\n" +
-                resourceBundle.getString("enter.submit.decision");
+                new String(resourceBundle.getString("enter.submit.decision").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8);
 
     }
 

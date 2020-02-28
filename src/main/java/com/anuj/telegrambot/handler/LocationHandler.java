@@ -16,6 +16,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Service
@@ -48,8 +49,6 @@ public class LocationHandler {
             Report report = new Report();
             report.setLongitude(update.getMessage().getLocation().getLongitude());
             report.setLatitude(update.getMessage().getLocation().getLatitude());
-//            report.setLongitude(33.4532346423);
-//            report.setLatitude(72.3421245324);
             report.setUser(user);
             report = reportRepository.save(report);
             user.getReportList().add(report);
@@ -57,7 +56,8 @@ public class LocationHandler {
             ResourceBundle resourceBundle = localeUtils.getMessageResource(user.getLanguageType());
             SendMessage message = new SendMessage() // Create a message object object
                     .setChatId(update.getMessage().getChatId())
-                    .setText(resourceBundle.getString("enter.product.category"));
+                    .setText(new String(resourceBundle.getString("enter.product.category").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8));
+
             message.setReplyMarkup(fetchListOfProduct(report.getIdReport(),user));
             return message;
 

@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -70,20 +71,20 @@ public class SendReportHandler {
                         report.setIsSubmitted(true);
                         reportRepository.save(report);
 
-                        messageText = "<b>" + resourceBundle.getString("report.your-report") + "</b> \n" +
+                        messageText = "<b>" + new String(resourceBundle.getString("report.your-report").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + "</b> \n" +
                                 "\n===================================\n" +
-                                "\n" + resourceBundle.getString("report.report-id") + " <b>" + report.getIdReport() + "</b>" +
-                                "\n" + resourceBundle.getString("report.latitude") + " <b>" + report.getLatitude() + "</b>" +
-                                "\n" + resourceBundle.getString("report.longitude") + " <b>" + report.getLongitude() + "</b>" +
-                                "\n" + resourceBundle.getString("report.product.name") + " <b>" + report.getLocaleName() + "</b>" +
-                                "\n" + resourceBundle.getString("report.product.scarcity.level") + " <b>" + report.getProductScarcity() + "</b>" +
-                                "\n" + resourceBundle.getString("report.product.expensive.level") + " <b>" + report.getProductPrice() + "</b>" +
-                                "\n" + resourceBundle.getString("report.product.note") + "<b><i>" + report.getProductNote() + "</i>" + "</b>" +
+                                "\n" + new String(resourceBundle.getString("report.report-id").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getIdReport() + "</b>" +
+                                "\n" + new String(resourceBundle.getString("report.latitude").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getLatitude() + "</b>" +
+                                "\n" + new String(resourceBundle.getString("report.longitude").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getLongitude() + "</b>" +
+                                "\n" + new String(resourceBundle.getString("report.product.name").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getLocaleName() + "</b>" +
+                                "\n" + new String(resourceBundle.getString("report.product.scarcity.level").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getProductScarcity() + "</b>" +
+                                "\n" + new String(resourceBundle.getString("report.product.expensive.level").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getProductPrice() + "</b>" +
+                                "\n" + new String(resourceBundle.getString("report.product.note").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b><i>" + report.getProductNote() + "</i>" + "</b>" +
                                 "\n\n===================================\n" +
-                                resourceBundle.getString("send.successful");
+                                new String(resourceBundle.getString("send.successful").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8);
 
                     } else {
-                        messageText = resourceBundle.getString("send.canceled");
+                        messageText = new String(resourceBundle.getString("send.canceled").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8);
                     }
                     shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
                     shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, messageText));
@@ -120,7 +121,7 @@ public class SendReportHandler {
                     Report report = reportService.getReport(verifiedReportId, user);
                     reportRepository.delete(report);
                     shortageTrackerBot.execute(generalHandler.decisionInlineKeyboardEdit(update));
-                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, resourceBundle.getString("send.canceled")));
+                    shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, new String(resourceBundle.getString("send.canceled").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8)));
                 } catch (UserNotFoundException e) {
 
                 } catch (ReportNotFoundException e) {

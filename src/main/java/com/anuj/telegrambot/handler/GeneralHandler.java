@@ -8,6 +8,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Service
@@ -35,8 +36,8 @@ public class GeneralHandler {
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
         List<InlineKeyboardButton> column = new ArrayList<>();
-        column.add(new InlineKeyboardButton().setText(resourceBundle.getString("send.yes")).setCallbackData("send_report_true_" + idReport));
-        column.add(new InlineKeyboardButton().setText(resourceBundle.getString("send.no")).setCallbackData("send_report_false_" + idReport));
+        column.add(new InlineKeyboardButton().setText(new String(resourceBundle.getString("send.yes").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8)).setCallbackData("send_report_true_" + idReport));
+        column.add(new InlineKeyboardButton().setText(new String(resourceBundle.getString("send.no").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8)).setCallbackData("send_report_false_" + idReport));
         rowsInline.add(column);
         markupInline.setKeyboard(rowsInline);
         editMessageReplyMarkup.setReplyMarkup(markupInline);
@@ -51,7 +52,7 @@ public class GeneralHandler {
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
         List<InlineKeyboardButton> column = new ArrayList<>();
-        column.add(new InlineKeyboardButton().setText(resourceBundle.getString("note.skip")).setCallbackData("skip_note_" + idReport));
+        column.add(new InlineKeyboardButton().setText(new String(resourceBundle.getString("note.skip").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8)).setCallbackData("skip_note_" + idReport));
         rowsInline.add(column);
         markupInline.setKeyboard(rowsInline);
         editMessageReplyMarkup.setReplyMarkup(markupInline);

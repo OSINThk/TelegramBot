@@ -13,8 +13,6 @@ public class UserDto {
 
     @JsonProperty("telegram_user_id")
     private Integer telegramUserId;
-    @JsonProperty("telegram_user_name")
-    private String telegramUserName;
     @JsonProperty("language_type")
     private LanguageType languageType;
 

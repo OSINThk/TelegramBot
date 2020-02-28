@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,16 +74,16 @@ public class PriceHandler {
                     report.setProductPrice(expensiveLevel);
                     report = reportRepository.save(report);
                     ResourceBundle resourceBundle = localeUtils.getMessageResource(user.getLanguageType());
-                    String messageText = "<b>" + resourceBundle.getString("report.your-report") + "</b> \n" +
+                    String messageText = "<b>" + new String(resourceBundle.getString("report.your-report").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + "</b> \n" +
                             "\n===================================\n" +
-                            "\n" + resourceBundle.getString("report.report-id") + " <b>" + report.getIdReport() + "</b>" +
-                            "\n" + resourceBundle.getString("report.latitude") + " <b>" + report.getLatitude() + "</b>" +
-                            "\n" + resourceBundle.getString("report.longitude") + " <b>" + report.getLongitude() + "</b>" +
-                            "\n" + resourceBundle.getString("report.product.name") + " <b>" + report.getLocaleName() + "</b>" +
-                            "\n" + resourceBundle.getString("report.product.scarcity.level") + " <b>" + report.getProductScarcity() + "</b>" +
-                            "\n" + resourceBundle.getString("report.product.expensive.level") + " <b>" + report.getProductPrice() + "</b>" +
+                            "\n" + new String(resourceBundle.getString("report.report-id").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getIdReport() + "</b>" +
+                            "\n" + new String(resourceBundle.getString("report.latitude").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getLatitude() + "</b>" +
+                            "\n" + new String(resourceBundle.getString("report.longitude").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getLongitude() + "</b>" +
+                            "\n" + new String(resourceBundle.getString("report.product.name").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getLocaleName() + "</b>" +
+                            "\n" + new String(resourceBundle.getString("report.product.scarcity.level").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getProductScarcity() + "</b>" +
+                            "\n" + new String(resourceBundle.getString("report.product.expensive.level").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " <b>" + report.getProductPrice() + "</b>" +
                             "\n\n===================================\n" +
-                            "\n" + resourceBundle.getString("enter.product.note") + " /note report_id " + resourceBundle.getString("for.example") + "<b>/note " + report.getIdReport() + " " + resourceBundle.getString("note.sample") + " </b>";
+                            "\n" + new String(resourceBundle.getString("enter.product.note").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " /note report_id " + new String(resourceBundle.getString("for.example").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + "<b>/note " + report.getIdReport() + " " + new String(resourceBundle.getString("note.sample").getBytes(StandardCharsets.ISO_8859_1),StandardCharsets.UTF_8) + " </b>";
                     shortageTrackerBot.execute(generalHandler.decisionMessageEdit(update, messageText));
                     shortageTrackerBot.execute(generalHandler.decisionMessageEditAddSkip(resourceBundle, update, report.getIdReport()));
                 } catch (UserNotFoundException e) {
